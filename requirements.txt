@@ -6,4 +6,5 @@ seaborn
 plotly
 scikit-learn
 joblib
-opencv-python
+opencv-python-headless
+
