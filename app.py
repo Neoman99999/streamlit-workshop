@@ -1,41 +1,44 @@
-
 import streamlit as st
 import joblib
-import cv2
-import numpy as np
+import cv2 # ✅ สำคัญ! ต้อง import
 from PIL import Image
+import numpy as np
 
-# --- โหลดโมเดล SVM ---
-model = joblib.load("svm_image_classifier_model.pkl")
+# --- Load the trained model ---
+with open("svm_image_classifier_model.pkl", "rb") as f:
+model = joblib.load(f)
 
-# --- สร้าง UI ---
+# --- Streamlit UI ---
 st.title("Fruit Classifier")
-st.write("อัปโหลดรูปภาพเพื่อทำนายว่าเป็น **แอปเปิ้ล** หรือ **ส้ม**")
+st.write("Upload an image of an **apple** or **orange**, and the model will predict it.")
 
-# dictionary แปลง class index เป็นชื่อ
-class_dict = {0: "แอปเปิ้ล", 1: "ส้ม"}
-
-# --- อัปโหลดรูป ---
+# --- File uploader ---
 uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "png", "jpeg"])
 
+# --- Define class labels ---
+class_dict = {0: "Apple", 1: "Orange"}
+
 if uploaded_file is not None:
-    # อ่านและแปลงเป็น RGB
-    image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, caption='Uploaded Image', use_container_width=True)
+# Display image
+image = Image.open(uploaded_file).convert("RGB")
+st.image(image, caption='Uploaded Image', use_container_width=True)
 
-    # ปุ่มทำนาย
-    if st.button("Predict"):
-        # --- แปลงรูปเป็น array ตามตอน train ---
-        image_array = np.array(image)
-        # ถ้า train ใช้ OpenCV default BGR ให้ convert
-        image_array = cv2.cvtColor(image_array, cv2.COLOR_RGB2BGR)
-        # Resize เป็น (100, 100) ตามตอน train
-        image_resized = cv2.resize(image_array, (100, 100))
-        # Flatten เป็น feature vector
-        image_flatten = image_resized.flatten().reshape(1, -1)
+if st.button("Predict"):
+# ✅ Resize image to 100x100 (เหมือนตอนฝึกโมเดล)
+image = image.resize((100, 100))
 
-        # --- ทำนาย ---
-        prediction = model.predict(image_flatten)[0]
-        prediction_name = class_dict[prediction]
+# ✅ Convert to numpy array
+image_array = np.array(image)
 
-        st.write(f"ผลการทำนาย: **{prediction_name}**")
+# ✅ Convert RGB to BGR (ตามลำดับสีของ OpenCV)
+image_array = cv2.cvtColor(image_array, cv2.COLOR_RGB2BGR)
+
+# ✅ Flatten และ reshape เป็น input ที่โมเดลต้องการ
+image_array = image_array.flatten().reshape(1, -1)
+
+# ✅ Predict
+prediction = model.predict(image_array)[0]
+prediction_name = class_dict[prediction]
+
+# ✅ Show result
+st.markdown(f"### Prediction: **{prediction_name}**")
